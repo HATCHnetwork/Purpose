@@ -1,0 +1,1676 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HATCH — Purpose 3.0</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+/* ── RESET & TOKENS ─────────────────────────────── */
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+:root {
+  --night:   #0F0F13;
+  --night2:  #16161C;
+  --night3:  #1E1E28;
+  --ivory:   #F4EFE6;
+  --ivory2:  #C8C0B2;
+  --amber:   #E8A030;
+  --amber-d: #B87820;
+  --sage:    #7A8C7E;
+  --slate:   #3D4A58;
+  --rose:    #C45C4A;
+  --r: 16px;
+}
+
+html { font-size: 16px; scroll-behavior: smooth; }
+
+body {
+  background: var(--night);
+  color: var(--ivory);
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-weight: 300;
+  overflow-x: hidden;
+  min-height: 100vh;
+}
+
+/* ── CHAPTER SYSTEM ─────────────────────────────── */
+.chapters { position: relative; }
+
+.chapter {
+  display: none;
+  min-height: 100vh;
+  position: relative;
+  flex-direction: column;
+}
+
+.chapter.active { display: flex; }
+
+/* ── PROGRESS RAIL ──────────────────────────────── */
+.progress-rail {
+  position: fixed;
+  left: 28px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  z-index: 100;
+}
+
+.rail-track {
+  width: 1px;
+  background: rgba(244,239,230,0.12);
+  position: absolute;
+  top: 0; bottom: 0;
+  left: 50%;
+}
+
+.rail-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(244,239,230,0.25);
+  background: transparent;
+  position: relative;
+  z-index: 2;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  flex-shrink: 0;
+}
+
+.rail-dot + .rail-dot { margin-top: 20px; }
+
+.rail-dot.done { background: var(--amber); border-color: var(--amber); }
+.rail-dot.active { background: var(--ivory); border-color: var(--ivory); box-shadow: 0 0 10px rgba(244,239,230,0.4); }
+.rail-dot:hover { border-color: var(--ivory); }
+
+/* ── NAV ────────────────────────────────────────── */
+.top-nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  padding: 20px 48px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 100;
+  background: linear-gradient(to bottom, rgba(15,15,19,0.95) 0%, transparent 100%);
+}
+
+.nav-logo {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--amber);
+}
+
+.nav-chapter {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(244,239,230,0.35);
+}
+
+.nav-progress-text {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: rgba(244,239,230,0.35);
+}
+
+/* ── CHAPTER INNER ──────────────────────────────── */
+.ch-inner {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 120px 48px 80px 100px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 100vh;
+}
+
+.ch-eyebrow {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--amber);
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.ch-eyebrow::before {
+  content: '';
+  width: 24px;
+  height: 1px;
+  background: var(--amber);
+  display: block;
+}
+
+.ch-title {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: clamp(36px, 5vw, 60px);
+  font-weight: 700;
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+  color: var(--ivory);
+  margin-bottom: 24px;
+}
+
+.ch-title em {
+  font-style: italic;
+  font-weight: 400;
+  color: var(--amber);
+}
+
+.ch-body {
+  font-size: 17px;
+  line-height: 1.8;
+  color: var(--ivory2);
+  margin-bottom: 40px;
+  max-width: 560px;
+}
+
+/* ── FORM ELEMENTS ──────────────────────────────── */
+.field { margin-bottom: 28px; }
+
+.field-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ivory);
+  margin-bottom: 10px;
+  display: block;
+  letter-spacing: 0.02em;
+}
+
+.field-sublabel {
+  font-size: 12px;
+  color: var(--ivory2);
+  margin-bottom: 10px;
+  display: block;
+  line-height: 1.5;
+}
+
+input[type="text"], textarea {
+  width: 100%;
+  background: var(--night3);
+  border: 1px solid rgba(244,239,230,0.1);
+  border-radius: 6px;
+  padding: 14px 18px;
+  color: var(--ivory);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 15px;
+  font-weight: 300;
+  outline: none;
+  transition: border-color 0.25s;
+  resize: vertical;
+}
+
+input[type="text"]:focus, textarea:focus {
+  border-color: var(--amber);
+}
+
+textarea { min-height: 80px; }
+
+/* ── OPTION CHIPS ───────────────────────────────── */
+.chip-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chip {
+  padding: 9px 18px;
+  border: 1px solid rgba(244,239,230,0.15);
+  border-radius: 100px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: var(--ivory2);
+  background: transparent;
+  font-family: 'DM Sans', sans-serif;
+  user-select: none;
+}
+
+.chip:hover { border-color: rgba(244,239,230,0.4); color: var(--ivory); }
+.chip.selected { border-color: var(--amber); color: var(--amber); background: rgba(232,160,48,0.08); }
+
+/* Values chips — bigger */
+.values-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+.value-chip {
+  padding: 10px 20px;
+  border: 1px solid rgba(244,239,230,0.12);
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: var(--ivory2);
+  background: var(--night3);
+  font-family: 'DM Sans', sans-serif;
+  user-select: none;
+  font-weight: 400;
+}
+.value-chip:hover { border-color: rgba(244,239,230,0.3); }
+.value-chip.selected { border-color: var(--amber); color: var(--ivory); background: rgba(232,160,48,0.12); }
+.value-chip.sixth { border-color: rgba(196,92,74,0.5) !important; cursor: not-allowed; opacity: 0.5; }
+
+/* ── SLIDER ─────────────────────────────────────── */
+.slider-row {
+  display: grid;
+  grid-template-columns: 140px 1fr 32px;
+  gap: 16px;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(244,239,230,0.06);
+}
+.slider-row:last-child { border-bottom: none; }
+
+.slider-name {
+  font-size: 13px;
+  color: var(--ivory2);
+}
+
+input[type="range"] {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 3px;
+  background: rgba(244,239,230,0.12);
+  border-radius: 2px;
+  outline: none;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--amber);
+  cursor: pointer;
+  box-shadow: 0 0 8px rgba(232,160,48,0.4);
+}
+
+input[type="range"]::-webkit-slider-runnable-track {
+  background: linear-gradient(to right, var(--amber) 0%, var(--amber) var(--pct), rgba(244,239,230,0.12) var(--pct));
+  height: 3px;
+  border-radius: 2px;
+}
+
+.slider-val {
+  font-family: 'DM Mono', monospace;
+  font-size: 14px;
+  color: var(--amber);
+  text-align: right;
+}
+
+/* ── RADAR CHART ────────────────────────────────── */
+.radar-wrap {
+  background: var(--night3);
+  border: 1px solid rgba(244,239,230,0.08);
+  border-radius: 12px;
+  padding: 24px;
+  margin: 20px 0;
+}
+
+/* ── PERSONALITY AXES ───────────────────────────── */
+.axis-row {
+  margin-bottom: 20px;
+}
+.axis-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.axis-label {
+  font-size: 12px;
+  color: var(--ivory2);
+  font-family: 'DM Mono', monospace;
+}
+.axis-track {
+  width: 100%;
+  height: 6px;
+  background: rgba(244,239,230,0.1);
+  border-radius: 3px;
+  position: relative;
+  cursor: pointer;
+}
+.axis-fill {
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  background: linear-gradient(to right, var(--sage), var(--amber));
+  border-radius: 3px;
+  transition: width 0.1s;
+}
+.axis-thumb {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--ivory);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+  cursor: grab;
+  transition: left 0.1s;
+}
+
+/* ── IKIGAI DIAGRAM ─────────────────────────────── */
+.ikigai-wrap {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 32px;
+  padding: 40px 0;
+}
+
+.ikigai-svg-wrap {
+  position: relative;
+  width: 320px;
+  height: 320px;
+  flex-shrink: 0;
+}
+
+.ikigai-inputs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  width: 100%;
+}
+
+.ik-field {
+  background: var(--night3);
+  border: 1px solid rgba(244,239,230,0.1);
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.ik-field-head {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.ik-love { color: #E87878; border-top: 2px solid #E87878; }
+.ik-world { color: var(--sage); border-top: 2px solid var(--sage); }
+.ik-good { color: var(--amber); border-top: 2px solid var(--amber); }
+.ik-paid { color: #78A8E8; border-top: 2px solid #78A8E8; }
+
+.ik-field textarea {
+  background: transparent;
+  border: none;
+  padding: 0;
+  font-size: 13px;
+  color: var(--ivory2);
+  min-height: 60px;
+  resize: none;
+}
+
+.ikigai-center-label {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.ikigai-center-word {
+  font-family: 'Playfair Display', serif;
+  font-style: italic;
+  font-size: 13px;
+  color: rgba(244,239,230,0.8);
+  line-height: 1.3;
+}
+
+/* ── ENERGY AUDIT ───────────────────────────────── */
+.energy-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin: 20px 0;
+}
+.energy-panel {
+  background: var(--night3);
+  border-radius: 10px;
+  padding: 20px;
+  border-top: 2px solid transparent;
+}
+.energy-panel.drain { border-top-color: var(--rose); }
+.energy-panel.fuel  { border-top-color: var(--sage); }
+
+.energy-head {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  margin-bottom: 14px;
+}
+.drain .energy-head { color: var(--rose); }
+.fuel  .energy-head { color: var(--sage); }
+
+.energy-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 0;
+  border-bottom: 1px solid rgba(244,239,230,0.06);
+}
+.energy-item:last-child { border-bottom: none; }
+
+.energy-input {
+  background: transparent;
+  border: none;
+  color: var(--ivory);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  flex: 1;
+  outline: none;
+  padding: 0;
+}
+.energy-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.drain .energy-dot { background: var(--rose); }
+.fuel  .energy-dot { background: var(--sage); }
+
+/* ── RATING MATRIX ──────────────────────────────── */
+.matrix-wrap {
+  background: var(--night3);
+  border: 1px solid rgba(244,239,230,0.08);
+  border-radius: 12px;
+  overflow: hidden;
+  margin: 20px 0;
+}
+
+.matrix-head-row {
+  display: grid;
+  grid-template-columns: 130px repeat(5,1fr);
+  background: rgba(244,239,230,0.04);
+  border-bottom: 1px solid rgba(244,239,230,0.08);
+}
+
+.matrix-head-cell {
+  padding: 10px 8px;
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-align: center;
+  color: var(--ivory2);
+}
+.matrix-head-cell:first-child { text-align: left; padding-left: 16px; }
+
+.matrix-row {
+  display: grid;
+  grid-template-columns: 130px repeat(5,1fr);
+  border-bottom: 1px solid rgba(244,239,230,0.05);
+  transition: background 0.15s;
+}
+.matrix-row:last-child { border-bottom: none; }
+.matrix-row:hover { background: rgba(244,239,230,0.02); }
+
+.matrix-label {
+  padding: 12px 8px 12px 16px;
+  font-size: 12px;
+  color: var(--ivory2);
+  display: flex;
+  align-items: center;
+}
+
+.matrix-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.matrix-radio {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(244,239,230,0.2);
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.matrix-radio:hover { border-color: var(--amber); }
+.matrix-radio.selected { border-color: var(--amber); background: var(--amber); }
+.matrix-radio.selected::after { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--night); }
+
+/* ── NAVIGATION BUTTONS ─────────────────────────── */
+.ch-nav {
+  display: flex;
+  gap: 12px;
+  margin-top: 40px;
+  align-items: center;
+}
+
+.btn-next {
+  background: var(--amber);
+  color: var(--night);
+  border: none;
+  padding: 14px 36px;
+  border-radius: 100px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  letter-spacing: 0.02em;
+}
+.btn-next:hover { background: #F0B040; transform: translateY(-1px); box-shadow: 0 8px 24px rgba(232,160,48,0.25); }
+
+.btn-back {
+  background: transparent;
+  color: var(--ivory2);
+  border: 1px solid rgba(244,239,230,0.15);
+  padding: 14px 28px;
+  border-radius: 100px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-back:hover { border-color: rgba(244,239,230,0.4); color: var(--ivory); }
+
+.ch-hint {
+  font-size: 12px;
+  color: rgba(244,239,230,0.3);
+  margin-top: 16px;
+  font-family: 'DM Mono', monospace;
+  letter-spacing: 0.05em;
+}
+
+/* ── COVER ──────────────────────────────────────── */
+#ch-cover {
+  background: var(--night);
+  position: relative;
+  overflow: hidden;
+}
+
+#ch-cover::before {
+  content: '';
+  position: absolute;
+  top: -40%;
+  right: -20%;
+  width: 70vw;
+  height: 70vw;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(232,160,48,0.06) 0%, transparent 65%);
+  pointer-events: none;
+}
+
+#ch-cover::after {
+  content: '';
+  position: absolute;
+  bottom: -30%;
+  left: -10%;
+  width: 50vw;
+  height: 50vw;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(122,140,126,0.08) 0%, transparent 65%);
+  pointer-events: none;
+}
+
+.cover-stat {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  background: rgba(244,239,230,0.04);
+  border: 1px solid rgba(244,239,230,0.08);
+  border-radius: 100px;
+  padding: 8px 20px;
+  margin-right: 10px;
+  margin-bottom: 10px;
+}
+.stat-num {
+  font-family: 'Playfair Display', serif;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--amber);
+}
+.stat-label {
+  font-size: 12px;
+  color: var(--ivory2);
+}
+
+.cover-tagline {
+  font-family: 'Playfair Display', serif;
+  font-style: italic;
+  font-size: clamp(20px, 3vw, 28px);
+  color: rgba(244,239,230,0.5);
+  margin-bottom: 48px;
+  line-height: 1.4;
+  max-width: 480px;
+}
+
+.cover-qs {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 52px;
+}
+
+.cover-q {
+  font-family: 'Playfair Display', serif;
+  font-style: italic;
+  font-size: 16px;
+  color: rgba(244,239,230,0.45);
+  padding-left: 20px;
+  border-left: 2px solid rgba(232,160,48,0.3);
+}
+
+/* ── REGRET COMPASS ─────────────────────────────── */
+.compass-wrap {
+  position: relative;
+  width: 200px;
+  height: 200px;
+  margin: 20px auto;
+}
+
+.compass-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 1px solid rgba(244,239,230,0.08);
+}
+
+.compass-ring:nth-child(2) { inset: 20px; }
+.compass-ring:nth-child(3) { inset: 40px; }
+
+.compass-center {
+  position: absolute;
+  inset: 60px;
+  border-radius: 50%;
+  background: rgba(232,160,48,0.08);
+  border: 1px solid rgba(232,160,48,0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.compass-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 8px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--amber);
+}
+
+/* ── FINAL CHAPTER ──────────────────────────────── */
+#ch-final {
+  background: linear-gradient(160deg, #0F0F13 0%, #141418 100%);
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin: 28px 0;
+}
+
+.summary-card {
+  background: var(--night3);
+  border-radius: 10px;
+  padding: 20px;
+  border-left: 3px solid var(--amber);
+}
+
+.summary-card-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--amber);
+  margin-bottom: 8px;
+}
+
+.summary-card-val {
+  font-size: 14px;
+  color: var(--ivory);
+  line-height: 1.5;
+  min-height: 36px;
+  font-style: italic;
+}
+
+.submit-btn {
+  background: linear-gradient(135deg, var(--amber), #F0B840);
+  color: var(--night);
+  border: none;
+  padding: 18px 48px;
+  border-radius: 100px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s;
+  display: block;
+  margin: 32px auto 0;
+  letter-spacing: 0.03em;
+}
+
+.submit-btn:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(232,160,48,0.3); }
+
+/* ── ENTRY ANIMATION ────────────────────────────── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(28px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.ch-inner > * {
+  animation: fadeUp 0.6s ease both;
+}
+.ch-inner > *:nth-child(1) { animation-delay: 0.05s; }
+.ch-inner > *:nth-child(2) { animation-delay: 0.12s; }
+.ch-inner > *:nth-child(3) { animation-delay: 0.18s; }
+.ch-inner > *:nth-child(4) { animation-delay: 0.24s; }
+.ch-inner > *:nth-child(5) { animation-delay: 0.30s; }
+.ch-inner > *:nth-child(6) { animation-delay: 0.36s; }
+
+/* ── RESPONSIVE ─────────────────────────────────── */
+@media (max-width: 600px) {
+  .ch-inner { padding: 100px 24px 60px 56px; }
+  .top-nav { padding: 16px 24px; }
+  .progress-rail { left: 16px; }
+  .matrix-wrap { overflow-x: auto; }
+  .ikigai-inputs { grid-template-columns: 1fr; }
+  .energy-grid { grid-template-columns: 1fr; }
+  .summary-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- TOP NAV -->
+<nav class="top-nav">
+  <div class="nav-logo">HATCH</div>
+  <div class="nav-chapter" id="nav-chapter-label">Purpose 3.0</div>
+  <div class="nav-progress-text" id="nav-progress">1 / 10</div>
+</nav>
+
+<!-- PROGRESS RAIL -->
+<div class="progress-rail" id="rail">
+  <div class="rail-track"></div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     CHAPTER 0: COVER
+════════════════════════════════════════════ -->
+<div class="chapter active" id="ch-cover">
+  <div class="ch-inner">
+    <div class="ch-eyebrow">HATCH · Portal</div>
+    <h1 class="ch-title">Purpose <em>3.0</em></h1>
+    <p class="cover-tagline">Who you are becoming is not who you were.</p>
+    <div class="cover-qs">
+      <div class="cover-q">What are the elements important for living a balanced life?</div>
+      <div class="cover-q">Where do I want to be in 10–15 years?</div>
+      <div class="cover-q">What is the legacy I want to leave?</div>
+    </div>
+    <div style="margin-bottom:36px">
+      <span class="cover-stat"><span class="stat-num">35T</span><span class="stat-label">cells in your body</span></span>
+      <span class="cover-stat"><span class="stat-num">8</span><span class="stat-label">years to full regeneration</span></span>
+      <span class="cover-stat"><span class="stat-num">~25min</span><span class="stat-label">to complete</span></span>
+    </div>
+    <p class="ch-body" style="margin-bottom:12px">This thought exercise addresses the evolution within you — and helps unlock your full human potential. All responses are confidential.</p>
+
+    <div class="field">
+      <label class="field-label">Your name</label>
+      <input type="text" id="f-name" placeholder="First and last name">
+    </div>
+
+    <div class="field">
+      <label class="field-label">Right now, I would describe myself as…</label>
+      <div class="chip-grid" id="status-chips">
+        <div class="chip" data-val="groove">In a groove and loving it</div>
+        <div class="chip" data-val="optimize">Looking to optimize</div>
+        <div class="chip" data-val="transition">Major life transition</div>
+        <div class="chip" data-val="pivot">Career pivot</div>
+        <div class="chip" data-val="stuck">Feeling stuck</div>
+        <div class="chip" data-val="reflect">Annual reflection</div>
+        <div class="chip" data-val="next">Curious about what's next</div>
+        <div class="chip" data-val="purpose">Want to be more purpose-filled</div>
+      </div>
+    </div>
+
+    <div class="ch-nav">
+      <button class="btn-next" onclick="nextChapter()">Begin the journey →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     CHAPTER 1: SUPERPOWERS
+════════════════════════════════════════════ -->
+<div class="chapter" id="ch-1">
+  <div class="ch-inner">
+    <div class="ch-eyebrow">Chapter 1 · Identity</div>
+    <h1 class="ch-title">Your Real-Life <em>Superpowers</em></h1>
+    <p class="ch-body">Before we look at where you're going, let's name what you're already carrying. The things that come effortlessly to you are not accidents — they're data.</p>
+
+    <div class="field">
+      <label class="field-label">What are your real-life superpowers?</label>
+      <textarea id="f-superpowers" placeholder="The things people always seem to come to you for…"></textarea>
+    </div>
+
+    <div class="field">
+      <label class="field-label">What do people consistently come to you for help with?</label>
+      <textarea id="f-help" placeholder="Think about the last 5 times someone asked for your advice or assistance…"></textarea>
+    </div>
+
+    <div class="field">
+      <label class="field-label">What work or activity makes you lose track of time?</label>
+      <textarea id="f-flow" placeholder="Flow states are signals. What takes you there?"></textarea>
+    </div>
+
+    <div class="field">
+      <label class="field-label">What would your closest colleagues say is your greatest professional strength?</label>
+      <textarea id="f-strength" placeholder="If they had to write one sentence about you for an award…"></textarea>
+    </div>
+
+    <div class="ch-nav">
+      <button class="btn-back" onclick="prevChapter()">← Back</button>
+      <button class="btn-next" onclick="nextChapter()">Continue →</button>
+    </div>
+    <p class="ch-hint">Press Enter or click Continue to move forward</p>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     CHAPTER 2: REGRET COMPASS
+════════════════════════════════════════════ -->
+<div class="chapter" id="ch-2">
+  <div class="ch-inner">
+    <div class="ch-eyebrow">Chapter 2 · Future Self</div>
+    <h1 class="ch-title">The Regret <em>Compass</em></h1>
+    <p class="ch-body">Transport yourself 20 years forward. You're looking back on the life you've lived. What, if anything, would sting?</p>
+
+    <p class="ch-body" style="font-size:14px; margin-bottom:28px">This is a complex, layered question — don't overthink it. Let it flow. If you get stuck, try 3–4 one-word answers.</p>
+
+    <div class="field">
+      <label class="field-label">If I continue on my current path, what might I regret in 20 years?</label>
+      <textarea id="f-regret" placeholder="Be honest. Your future self deserves it." style="min-height:120px"></textarea>
+    </div>
+
+    <div class="field" style="margin-top:32px">
+      <label class="field-label">What would you like to see yourself doing in 10 years?</label>
+      <textarea id="f-10yr" placeholder="A day in your life, 10 years from now…"></textarea>
+    </div>
+
+    <div class="field" style="margin-top:20px">
+      <label class="field-label">My deepest fear is…</label>
+      <div class="chip-grid" id="fear-chips">
+        <div class="chip" data-val="unloved">Being unloved or unwanted</div>
+        <div class="chip" data-val="worthless">Being worthless or a failure</div>
+        <div class="chip" data-val="identity">Having no identity</div>
+        <div class="chip" data-val="corrupt">Being bad or corrupt</div>
+        <div class="chip" data-val="helpless">Being helpless or incompetent</div>
+        <div class="chip" data-val="support">Being without support</div>
+        <div class="chip" data-val="pain">Being in pain or deprived</div>
+        <div class="chip" data-val="controlled">Being controlled</div>
+        <div class="chip" data-val="lost">Being fragmented or lost</div>
+      </div>
+    </div>
+
+    <div class="ch-nav">
+      <button class="btn-back" onclick="prevChapter()">← Back</button>
+      <button class="btn-next" onclick="nextChapter()">Continue →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     CHAPTER 3: SELF-ASSESSMENT RADAR
+════════════════════════════════════════════ -->
+<div class="chapter" id="ch-3">
+  <div class="ch-inner">
+    <div class="ch-eyebrow">Chapter 3 · Self-Assessment</div>
+    <h1 class="ch-title">Where You Stand <em>Today</em></h1>
+    <p class="ch-body">Rate each dimension twice: once for how important it will be in 20 years, once for how you're doing right now. Watch the gap emerge.</p>
+
+    <!-- Future importance -->
+    <div style="margin-bottom:8px">
+      <span style="font-size:12px; color:var(--ivory2); font-family:'DM Mono',monospace; letter-spacing:0.15em; text-transform:uppercase;">Future Importance (in 20 years)</span>
+    </div>
+    <div class="matrix-wrap" id="future-matrix">
+      <div class="matrix-head-row">
+        <div class="matrix-head-cell"></div>
+        <div class="matrix-head-cell">1</div>
+        <div class="matrix-head-cell">2</div>
+        <div class="matrix-head-cell">3</div>
+        <div class="matrix-head-cell">4</div>
+        <div class="matrix-head-cell">5★</div>
+      </div>
+    </div>
+
+    <!-- Current state -->
+    <div style="margin:24px 0 8px">
+      <span style="font-size:12px; color:var(--ivory2); font-family:'DM Mono',monospace; letter-spacing:0.15em; text-transform:uppercase;">How I'm doing right now</span>
+    </div>
+    <div class="matrix-wrap" id="current-matrix"></div>
+
+    <!-- Radar chart -->
+    <div class="radar-wrap" style="margin-top:28px">
+      <div style="font-family:'DM Mono',monospace; font-size:9px; letter-spacing:0.2em; text-transform:uppercase; color:var(--amber); margin-bottom:16px">Your Balance Radar</div>
+      <canvas id="radarChart" width="400" height="280"></canvas>
+      <div style="display:flex; gap:20px; margin-top:12px; justify-content:center">
+        <div style="display:flex; align-items:center; gap:6px; font-size:11px; color:var(--ivory2)">
+          <div style="width:12px; height:2px; background:var(--amber)"></div> Future
+        </div>
+        <div style="display:flex; align-items:center; gap:6px; font-size:11px; color:var(--ivory2)">
+          <div style="width:12px; height:2px; background:var(--sage)"></div> Today
+        </div>
+      </div>
+    </div>
+
+    <div class="field" style="margin-top:28px">
+      <label class="field-label">How well does your current work match your personality, talents, and values?</label>
+      <div style="margin-top:16px">
+        <div style="display:flex; justify-content:space-between; margin-bottom:8px">
+          <span style="font-size:12px; color:var(--ivory2)">Poorly matched</span>
+          <span style="font-size:12px; color:var(--ivory2)">Perfectly aligned</span>
+        </div>
+        <input type="range" id="work-match" min="1" max="5" value="3" style="width:100%" oninput="updateSliderTrack(this)">
+        <div style="text-align:center; margin-top:8px; font-family:'DM Mono',monospace; font-size:14px; color:var(--amber)" id="work-match-val">3 / 5</div>
+      </div>
+    </div>
+
+    <div class="ch-nav">
+      <button class="btn-back" onclick="prevChapter()">← Back</button>
+      <button class="btn-next" onclick="nextChapter()">Continue →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     CHAPTER 4: ITCHES & GROWTH
+════════════════════════════════════════════ -->
+<div class="chapter" id="ch-4">
+  <div class="ch-inner">
+    <div class="ch-eyebrow">Chapter 4 · Expansion</div>
+    <h1 class="ch-title">The Unlived <em>Chapters</em></h1>
+    <p class="ch-body">The things pulling at you aren't random. They're signals. Name them here — without editing or qualifying.</p>
+
+    <div class="field">
+      <label class="field-label">Itches to scratch — new skills, adventures, untapped dreams</label>
+      <textarea id="f-itches" placeholder="Learn a language, start a company, climb a mountain, write the book…" style="min-height:100px"></textarea>
+    </div>
+
+    <div class="field">
+      <label class="field-label">When was the last time you did something that genuinely took you out of your comfort zone?</label>
+      <textarea id="f-comfort" placeholder="Describe it. What happened?"></textarea>
+    </div>
+
+    <div class="field">
+      <label class="field-label">What could you be doing more of, starting tomorrow?</label>
+      <textarea id="f-more" placeholder="Not someday. Tomorrow."></textarea>
+    </div>
+
+    <div class="field">
+      <label class="field-label">What are you doing to ensure you're continually learning and growing?</label>
+      <textarea id="f-grow" placeholder="Habits, practices, disciplines…"></textarea>
+    </div>
+
+    <div class="field">
+      <label class="field-label">What could add more fun and laughter to your life?</label>
+      <textarea id="f-fun" placeholder="Be specific. Not "more fun" — what, exactly?"></textarea>
+    </div>
+
+    <div class="ch-nav">
+      <button class="btn-back" onclick="prevChapter()">← Back</button>
+      <button class="btn-next" onclick="nextChapter()">Continue →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     CHAPTER 5: HEALTH, RELATIONSHIPS & CONTRIBUTION
+════════════════════════════════════════════ -->
+<div class="chapter" id="ch-5">
+  <div class="ch-inner">
+    <div class="ch-eyebrow">Chapter 5 · Foundations</div>
+    <h1 class="ch-title">Body, Bonds, <em>& Contribution</em></h1>
+
+    <div class="field">
+      <label class="field-label">What are you doing to take care of your physical and mental health?</label>
+      <textarea id="f-health" placeholder="Exercise, sleep, therapy, nutrition, stillness…"></textarea>
+    </div>
+
+    <div class="field">
+      <label class="field-label">What are you currently doing to build and sustain your relationships with family and friends?</label>
+      <textarea id="f-relationships" placeholder="Be honest about what's working — and what isn't"></textarea>
+    </div>
+
+    <div class="field">
+      <label class="field-label">In what way are you making a significant contribution to the world around you?</label>
+      <textarea id="f-contribution" placeholder="This can be large or small. Both count."></textarea>
+    </div>
+
+    <div class="field">
+      <label class="field-label">Do you know your guiding purpose in life? Are you living in alignment with it?</label>
+      <textarea id="f-purpose" placeholder="It's fine if the answer is "not yet""></textarea>
+    </div>
+
+    <div class="field">
+      <label class="field-label">Do you meditate?</label>
+      <div class="chip-grid" id="meditate-chips">
+        <div class="chip" data-val="yes">Yes, regularly</div>
+        <div class="chip" data-val="rarely">Rarely</div>
+        <div class="chip" data-val="no">Not yet</div>
+      </div>
+    </div>
+
+    <div class="field">
+      <label class="field-label">How often do you slow down and give yourself a chance to recharge?</label>
+      <div class="chip-grid" id="recharge-chips">
+        <div class="chip" data-val="often">Often — weekly or monthly</div>
+        <div class="chip" data-val="enough">Enough — 2–3 times a year</div>
+        <div class="chip" data-val="rarely">Not enough — once a year if that</div>
+      </div>
+    </div>
+
+    <div class="ch-nav">
+      <button class="btn-back" onclick="prevChapter()">← Back</button>
+      <button class="btn-next" onclick="nextChapter()">Continue →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     CHAPTER 6: PERSONALITY AXES
+════════════════════════════════════════════ -->
+<div class="chapter" id="ch-6">
+  <div class="ch-inner">
+    <div class="ch-eyebrow">Chapter 6 · Wiring</div>
+    <h1 class="ch-title">How You're <em>Wired</em></h1>
+    <p class="ch-body">No right answers. Honest answers only. Drag each dial toward whichever end feels more true.</p>
+
+    <div style="margin:32px 0">
+      <div class="axis-row">
+        <div class="axis-labels">
+          <span class="axis-label">Social — Gain energy from others</span>
+          <span class="axis-label">Solo — Recharge alone</span>
+        </div>
+        <div class="axis-track" id="ax1" onclick="setAxis(event,'ax1','f-social')">
+          <div class="axis-fill" id="ax1-fill" style="width:50%"></div>
+          <div class="axis-thumb" id="ax1-thumb" style="left:50%"></div>
+        </div>
+      </div>
+      <input type="hidden" id="f-social" value="50">
+
+      <div class="axis-row" style="margin-top:28px">
+        <div class="axis-labels">
+          <span class="axis-label">Data &amp; Facts</span>
+          <span class="axis-label">Gut &amp; Patterns</span>
+        </div>
+        <div class="axis-track" id="ax2" onclick="setAxis(event,'ax2','f-data')">
+          <div class="axis-fill" id="ax2-fill" style="width:50%"></div>
+          <div class="axis-thumb" id="ax2-thumb" style="left:50%"></div>
+        </div>
+      </div>
+      <input type="hidden" id="f-data" value="50">
+
+      <div class="axis-row" style="margin-top:28px">
+        <div class="axis-labels">
+          <span class="axis-label">Logic-first decisions</span>
+          <span class="axis-label">People-first decisions</span>
+        </div>
+        <div class="axis-track" id="ax3" onclick="setAxis(event,'ax3','f-logic')">
+          <div class="axis-fill" id="ax3-fill" style="width:50%"></div>
+          <div class="axis-thumb" id="ax3-thumb" style="left:50%"></div>
+        </div>
+      </div>
+      <input type="hidden" id="f-logic" value="50">
+
+      <div class="axis-row" style="margin-top:28px">
+        <div class="axis-labels">
+          <span class="axis-label">I prefer having a plan</span>
+          <span class="axis-label">I like keeping options open</span>
+        </div>
+        <div class="axis-track" id="ax4" onclick="setAxis(event,'ax4','f-plan')">
+          <div class="axis-fill" id="ax4-fill" style="width:50%"></div>
+          <div class="axis-thumb" id="ax4-thumb" style="left:50%"></div>
+        </div>
+      </div>
+      <input type="hidden" id="f-plan" value="50">
+    </div>
+
+    <div class="ch-nav">
+      <button class="btn-back" onclick="prevChapter()">← Back</button>
+      <button class="btn-next" onclick="nextChapter()">Continue →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     CHAPTER 7: VALUES & ENERGY AUDIT
+════════════════════════════════════════════ -->
+<div class="chapter" id="ch-7">
+  <div class="ch-inner">
+    <div class="ch-eyebrow">Chapter 7 · Values & Energy</div>
+    <h1 class="ch-title">What Fuels You. <em>What Drains You.</em></h1>
+
+    <div class="field">
+      <label class="field-label">Select your top 5 non-negotiable values</label>
+      <div class="field-sublabel" id="values-count">0 of 5 selected</div>
+      <div class="values-grid" id="values-grid">
+        <!-- filled by JS -->
+      </div>
+    </div>
+
+    <div class="field" style="margin-top:12px">
+      <label class="field-label">Are you currently living in alignment with these values?</label>
+      <div class="chip-grid" id="align-chips">
+        <div class="chip" data-val="yes">Yes, largely</div>
+        <div class="chip" data-val="maybe">In some areas</div>
+        <div class="chip" data-val="no">Not really</div>
+      </div>
+    </div>
+
+    <div class="field">
+      <label class="field-label">Where's the biggest gap?</label>
+      <textarea id="f-gap" placeholder="The area where your values and your daily life are furthest apart…"></textarea>
+    </div>
+
+    <div class="energy-grid" style="margin-top:28px">
+      <div class="energy-panel drain">
+        <div class="energy-head">⚡ Energy Drains</div>
+        <div id="drain-items"></div>
+      </div>
+      <div class="energy-panel fuel">
+        <div class="energy-head">✦ Energy Fuels</div>
+        <div id="fuel-items"></div>
+      </div>
+    </div>
+
+    <div class="field" style="margin-top:20px">
+      <label class="field-label">What ancillary "dead weight" can you clear?</label>
+      <textarea id="f-deadweight" placeholder="Commitments, relationships, beliefs, habits that no longer serve you…"></textarea>
+    </div>
+
+    <div class="ch-nav">
+      <button class="btn-back" onclick="prevChapter()">← Back</button>
+      <button class="btn-next" onclick="nextChapter()">Continue →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     CHAPTER 8: IKIGAI
+════════════════════════════════════════════ -->
+<div class="chapter" id="ch-8">
+  <div class="ch-inner">
+    <div class="ch-eyebrow">Chapter 8 · Ikigai</div>
+    <h1 class="ch-title">Your <em>Reason for Being</em></h1>
+    <p class="ch-body">Ikigai — 生き甲斐 — is a Japanese concept that translates as "reason for being." It lives at the intersection of four forces. Fill in each quadrant. Watch the center form.</p>
+
+    <!-- Live Ikigai SVG -->
+    <div class="ikigai-wrap">
+      <div class="ikigai-svg-wrap">
+        <svg id="ikigai-svg" viewBox="0 0 320 320" width="320" height="320" style="position:absolute;top:0;left:0">
+          <defs>
+            <radialGradient id="g-love" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stop-color="#E87878" stop-opacity="0.35"/>
+              <stop offset="100%" stop-color="#E87878" stop-opacity="0"/>
+            </radialGradient>
+            <radialGradient id="g-world" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stop-color="#7A8C7E" stop-opacity="0.35"/>
+              <stop offset="100%" stop-color="#7A8C7E" stop-opacity="0"/>
+            </radialGradient>
+            <radialGradient id="g-good" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stop-color="#E8A030" stop-opacity="0.35"/>
+              <stop offset="100%" stop-color="#E8A030" stop-opacity="0"/>
+            </radialGradient>
+            <radialGradient id="g-paid" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stop-color="#78A8E8" stop-opacity="0.35"/>
+              <stop offset="100%" stop-color="#78A8E8" stop-opacity="0"/>
+            </radialGradient>
+            <radialGradient id="g-center" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stop-color="#E8A030" stop-opacity="0.8"/>
+              <stop offset="100%" stop-color="#E8A030" stop-opacity="0"/>
+            </radialGradient>
+          </defs>
+          <!-- Four circles -->
+          <circle id="ik-c-love"  cx="148" cy="130" r="100" fill="url(#g-love)"  opacity="0.2"/>
+          <circle id="ik-c-world" cx="172" cy="130" r="100" fill="url(#g-world)" opacity="0.2"/>
+          <circle id="ik-c-good"  cx="148" cy="184" r="100" fill="url(#g-good)"  opacity="0.2"/>
+          <circle id="ik-c-paid"  cx="172" cy="184" r="100" fill="url(#g-paid)"  opacity="0.2"/>
+          <!-- Center glow — grows with input -->
+          <circle id="ik-center-glow" cx="160" cy="157" r="0" fill="url(#g-center)" opacity="0.6">
+            <animate id="center-pulse" attributeName="r" values="0;0" dur="1s" repeatCount="1"/>
+          </circle>
+          <!-- Outline rings -->
+          <circle cx="148" cy="130" r="100" fill="none" stroke="#E87878" stroke-width="0.8" opacity="0.3"/>
+          <circle cx="172" cy="130" r="100" fill="none" stroke="#7A8C7E" stroke-width="0.8" opacity="0.3"/>
+          <circle cx="148" cy="184" r="100" fill="none" stroke="#E8A030" stroke-width="0.8" opacity="0.3"/>
+          <circle cx="172" cy="184" r="100" fill="none" stroke="#78A8E8" stroke-width="0.8" opacity="0.3"/>
+          <!-- Labels -->
+          <text x="90"  y="52"  text-anchor="middle" font-size="9" fill="#E87878"  font-family="'DM Mono',monospace" letter-spacing="1">LOVE</text>
+          <text x="234" y="52"  text-anchor="middle" font-size="9" fill="#7A8C7E"  font-family="'DM Mono',monospace" letter-spacing="1">WORLD</text>
+          <text x="80"  y="290" text-anchor="middle" font-size="9" fill="#E8A030"  font-family="'DM Mono',monospace" letter-spacing="1">GOOD AT</text>
+          <text x="246" y="290" text-anchor="middle" font-size="9" fill="#78A8E8"  font-family="'DM Mono',monospace" letter-spacing="1">PAID FOR</text>
+        </svg>
+        <div class="ikigai-center-label">
+          <div class="ikigai-center-word" id="ikigai-center-word">your<br>ikigai</div>
+        </div>
+      </div>
+
+      <div class="ikigai-inputs">
+        <div class="ik-field ik-love">
+          <div class="ik-field-head">What You Love</div>
+          <textarea id="ik-love" placeholder="Your passions, deep interests…" oninput="updateIkigai()"></textarea>
+        </div>
+        <div class="ik-field ik-world">
+          <div class="ik-field-head">What the World Needs</div>
+          <textarea id="ik-world" placeholder="Your mission, your contribution…" oninput="updateIkigai()"></textarea>
+        </div>
+        <div class="ik-field ik-good">
+          <div class="ik-field-head">What You're Good At</div>
+          <textarea id="ik-good" placeholder="Natural gifts, trained skills…" oninput="updateIkigai()"></textarea>
+        </div>
+        <div class="ik-field ik-paid">
+          <div class="ik-field-head">What You Can Be Paid For</div>
+          <textarea id="ik-paid" placeholder="Profession, vocation, hustle…" oninput="updateIkigai()"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <div class="ch-nav">
+      <button class="btn-back" onclick="prevChapter()">← Back</button>
+      <button class="btn-next" onclick="nextChapter()">Continue →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     CHAPTER 9: ACCOUNTABILITY & MISSING
+════════════════════════════════════════════ -->
+<div class="chapter" id="ch-9">
+  <div class="ch-inner">
+    <div class="ch-eyebrow">Chapter 9 · Accountability</div>
+    <h1 class="ch-title">The Gap. <em>The Next Step.</em></h1>
+
+    <div class="field">
+      <label class="field-label">Can you identify what you're currently MISSING?</label>
+      <textarea id="f-missing" placeholder="The ingredient that would change everything if it were present…" style="min-height:100px"></textarea>
+    </div>
+
+    <div class="field">
+      <label class="field-label">Is there anything this survey didn't ask that feels important to name?</label>
+      <textarea id="f-other" placeholder="Anything surfacing that needs to be said…"></textarea>
+    </div>
+
+    <div class="field">
+      <label class="field-label" style="font-size:16px; font-weight:500">If you could only accomplish ONE thing in the next 12 months that would make everything else easier or irrelevant — what would it be?</label>
+      <textarea id="f-one-thing" placeholder="One thing. Be specific." style="min-height:100px; border-color: rgba(232,160,48,0.3)"></textarea>
+    </div>
+
+    <div class="field">
+      <label class="field-label">Who would you choose as your accountability buddy?</label>
+      <input type="text" id="f-buddy" placeholder="Name the person — and consider telling them">
+    </div>
+
+    <div class="ch-nav">
+      <button class="btn-back" onclick="prevChapter()">← Back</button>
+      <button class="btn-next" onclick="nextChapter()">See your summary →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     CHAPTER 10: FINAL SUMMARY
+════════════════════════════════════════════ -->
+<div class="chapter" id="ch-final">
+  <div class="ch-inner">
+    <div class="ch-eyebrow">Purpose 3.0 · Complete</div>
+    <h1 class="ch-title">Your <em>Portrait</em></h1>
+    <p class="ch-body">Here's what you've surfaced. This is the beginning of a living document — not a final answer, but a clearer mirror.</p>
+
+    <div class="summary-grid" id="summary-grid">
+      <!-- filled by JS -->
+    </div>
+
+    <div style="margin-top:32px; padding:24px; background:rgba(232,160,48,0.06); border:1px solid rgba(232,160,48,0.2); border-radius:10px">
+      <div style="font-family:'DM Mono',monospace; font-size:9px; letter-spacing:0.25em; text-transform:uppercase; color:var(--amber); margin-bottom:10px">Your One Thing</div>
+      <div style="font-family:'Playfair Display',serif; font-style:italic; font-size:20px; color:var(--ivory); line-height:1.4" id="summary-one-thing">—</div>
+    </div>
+
+    <div style="margin-top:20px; padding:16px 20px; background:var(--night3); border-radius:8px; font-size:13px; color:var(--ivory2); line-height:1.6">
+      <strong style="color:var(--ivory)">If you're ready to actualize this:</strong> Set your phone alarm for a weekly reminder to spend 20 minutes moving one thing from your goals list forward in small, incremental steps. That's it. Small. Consistent. Irreversible.
+    </div>
+
+    <button class="submit-btn" onclick="submitForm()">Submit to HATCH →</button>
+
+    <p style="text-align:center; font-size:12px; color:rgba(244,239,230,0.25); margin-top:20px; font-family:'DM Mono',monospace">All responses are confidential · HATCH Purpose 3.0</p>
+  </div>
+</div>
+
+<script>
+// ── STATE ──────────────────────────────────────────
+const state = {
+  current: 0,
+  total: 11,
+  futureRatings: { Health:0, Family:0, Purpose:0, Spirituality:0, Mindfulness:0, 'Giving Back':0, Legacy:0, 'Monetary Wealth':0 },
+  currentRatings: { Health:0, Family:0, Purpose:0, Spirituality:0, Mindfulness:0, 'Giving Back':0, Legacy:0, 'Monetary Wealth':0 },
+  values: [],
+};
+
+const chapters = ['ch-cover','ch-1','ch-2','ch-3','ch-4','ch-5','ch-6','ch-7','ch-8','ch-9','ch-final'];
+const chapterLabels = ['Intro','Identity','Future Self','Self-Assessment','Expansion','Foundations','Wiring','Values','Ikigai','Accountability','Summary'];
+const dims = ['Health','Family','Purpose','Spirituality','Mindfulness','Giving Back','Legacy','Monetary Wealth'];
+
+// ── PROGRESS RAIL ─────────────────────────────────
+function buildRail() {
+  const rail = document.getElementById('rail');
+  chapters.forEach((id, i) => {
+    const dot = document.createElement('div');
+    dot.className = 'rail-dot' + (i === 0 ? ' active' : '');
+    dot.title = chapterLabels[i];
+    dot.onclick = () => goTo(i);
+    rail.appendChild(dot);
+  });
+}
+
+function updateRail(idx) {
+  const dots = document.querySelectorAll('.rail-dot');
+  dots.forEach((d, i) => {
+    d.className = 'rail-dot' + (i < idx ? ' done' : i === idx ? ' active' : '');
+  });
+  document.getElementById('nav-progress').textContent = `${idx + 1} / ${chapters.length}`;
+  document.getElementById('nav-chapter-label').textContent = chapterLabels[idx];
+}
+
+// ── NAVIGATION ────────────────────────────────────
+function goTo(idx) {
+  const prev = document.getElementById(chapters[state.current]);
+  prev.classList.remove('active');
+  state.current = idx;
+  const next = document.getElementById(chapters[idx]);
+  next.classList.add('active');
+  // Re-trigger animations
+  const inner = next.querySelector('.ch-inner');
+  if (inner) {
+    inner.querySelectorAll('*').forEach(el => { el.style.animation = 'none'; el.offsetHeight; el.style.animation = ''; });
+  }
+  updateRail(idx);
+  window.scrollTo(0,0);
+  if (idx === chapters.length - 1) buildSummary();
+}
+
+function nextChapter() { if (state.current < chapters.length - 1) goTo(state.current + 1); }
+function prevChapter() { if (state.current > 0) goTo(state.current - 1); }
+
+// ── SINGLE-SELECT CHIP GROUPS ──────────────────────
+function initChipGroups() {
+  document.querySelectorAll('[id$="-chips"]').forEach(group => {
+    group.querySelectorAll('.chip').forEach(chip => {
+      chip.onclick = () => {
+        group.querySelectorAll('.chip').forEach(c => c.classList.remove('selected'));
+        chip.classList.add('selected');
+      };
+    });
+  });
+}
+
+// ── VALUES (multi-select, max 5) ──────────────────
+const valuesList = ['Adventure','Authenticity','Balance','Connection','Creativity','Excellence','Family','Freedom','Growth','Impact','Integrity','Justice','Leadership','Learning','Loyalty','Nature','Security','Service','Simplicity','Spirituality','Wealth'];
+
+function buildValues() {
+  const grid = document.getElementById('values-grid');
+  valuesList.forEach(v => {
+    const chip = document.createElement('div');
+    chip.className = 'value-chip';
+    chip.textContent = v;
+    chip.onclick = () => toggleValue(chip, v);
+    grid.appendChild(chip);
+  });
+}
+
+function toggleValue(chip, v) {
+  if (chip.classList.contains('selected')) {
+    chip.classList.remove('selected');
+    state.values = state.values.filter(x => x !== v);
+  } else {
+    if (state.values.length >= 5) { chip.classList.add('sixth'); setTimeout(() => chip.classList.remove('sixth'), 600); return; }
+    chip.classList.add('selected');
+    state.values.push(v);
+  }
+  document.getElementById('values-count').textContent = `${state.values.length} of 5 selected`;
+}
+
+// ── ENERGY AUDIT ──────────────────────────────────
+function buildEnergyAudit() {
+  ['drain','fuel'].forEach(type => {
+    const container = document.getElementById(`${type}-items`);
+    for (let i = 0; i < 5; i++) {
+      const row = document.createElement('div');
+      row.className = 'energy-item';
+      row.innerHTML = `<div class="energy-dot"></div><input class="energy-input" type="text" placeholder="${i === 0 ? 'Add something...' : ''}">`;
+      container.appendChild(row);
+    }
+  });
+}
+
+// ── AXIS SLIDERS ──────────────────────────────────
+function setAxis(e, trackId, fieldId) {
+  const track = document.getElementById(trackId);
+  const rect = track.getBoundingClientRect();
+  const pct = Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100));
+  document.getElementById(`${trackId}-fill`).style.width = pct + '%';
+  document.getElementById(`${trackId}-thumb`).style.left = pct + '%';
+  document.getElementById(fieldId).value = Math.round(pct);
+}
+
+// Add drag support to axes
+['ax1','ax2','ax3','ax4'].forEach((id, i) => {
+  const fieldId = ['f-social','f-data','f-logic','f-plan'][i];
+  let dragging = false;
+  const track = document.getElementById(id);
+  if (!track) return;
+  const thumb = document.getElementById(`${id}-thumb`);
+  thumb.addEventListener('mousedown', () => { dragging = true; });
+  document.addEventListener('mousemove', e => {
+    if (!dragging) return;
+    const rect = track.getBoundingClientRect();
+    const pct = Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100));
+    document.getElementById(`${id}-fill`).style.width = pct + '%';
+    thumb.style.left = pct + '%';
+    document.getElementById(fieldId).value = Math.round(pct);
+  });
+  document.addEventListener('mouseup', () => { dragging = false; });
+});
+
+// ── RATING MATRICES ───────────────────────────────
+function buildMatrix(containerId, prefix, ratings) {
+  const container = document.getElementById(containerId);
+  dims.forEach(dim => {
+    const row = document.createElement('div');
+    row.className = 'matrix-row';
+    row.innerHTML = `<div class="matrix-label">${dim}</div>`;
+    [1,2,3,4,5].forEach(val => {
+      const cell = document.createElement('div');
+      cell.className = 'matrix-cell';
+      const radio = document.createElement('div');
+      radio.className = 'matrix-radio';
+      radio.onclick = () => {
+        row.querySelectorAll('.matrix-radio').forEach(r => r.classList.remove('selected'));
+        radio.classList.add('selected');
+        ratings[dim] = val;
+        updateRadar();
+      };
+      cell.appendChild(radio);
+      row.appendChild(cell);
+    });
+    container.appendChild(row);
+  });
+}
+
+// ── RADAR CHART ───────────────────────────────────
+let radarChart = null;
+
+function updateRadar() {
+  const futureData = dims.map(d => state.futureRatings[d] || 0);
+  const currentData = dims.map(d => state.currentRatings[d] || 0);
+  if (radarChart) {
+    radarChart.data.datasets[0].data = futureData;
+    radarChart.data.datasets[1].data = currentData;
+    radarChart.update();
+  }
+}
+
+function initRadar() {
+  const ctx = document.getElementById('radarChart');
+  if (!ctx) return;
+  radarChart = new Chart(ctx, {
+    type: 'radar',
+    data: {
+      labels: ['Health','Family','Purpose','Spirituality','Mindfulness','Giving Back','Legacy','Wealth'],
+      datasets: [
+        {
+          label: 'Future Importance',
+          data: [0,0,0,0,0,0,0,0],
+          backgroundColor: 'rgba(232,160,48,0.1)',
+          borderColor: 'rgba(232,160,48,0.7)',
+          borderWidth: 1.5,
+          pointBackgroundColor: 'rgba(232,160,48,0.8)',
+          pointRadius: 3,
+        },
+        {
+          label: 'Today',
+          data: [0,0,0,0,0,0,0,0],
+          backgroundColor: 'rgba(122,140,126,0.1)',
+          borderColor: 'rgba(122,140,126,0.7)',
+          borderWidth: 1.5,
+          pointBackgroundColor: 'rgba(122,140,126,0.8)',
+          pointRadius: 3,
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      scales: {
+        r: {
+          min: 0, max: 5,
+          ticks: { stepSize: 1, color: 'rgba(244,239,230,0.3)', font: { size: 9 }, backdropColor: 'transparent' },
+          grid: { color: 'rgba(244,239,230,0.07)' },
+          angleLines: { color: 'rgba(244,239,230,0.07)' },
+          pointLabels: { color: 'rgba(244,239,230,0.6)', font: { size: 11, family: "'DM Sans'" } },
+        }
+      },
+      plugins: { legend: { display: false } },
+      elements: { line: { tension: 0.1 } }
+    }
+  });
+}
+
+// ── IKIGAI LIVE DIAGRAM ───────────────────────────
+function updateIkigai() {
+  const love  = document.getElementById('ik-love').value.trim();
+  const world = document.getElementById('ik-world').value.trim();
+  const good  = document.getElementById('ik-good').value.trim();
+  const paid  = document.getElementById('ik-paid').value.trim();
+  const filled = [love, world, good, paid].filter(v => v.length > 0).length;
+
+  // Opacity scales with fill
+  const opacities = { love: love ? 0.55 : 0.2, world: world ? 0.55 : 0.2, good: good ? 0.55 : 0.2, paid: paid ? 0.55 : 0.2 };
+  document.getElementById('ik-c-love').setAttribute('opacity', opacities.love);
+  document.getElementById('ik-c-world').setAttribute('opacity', opacities.world);
+  document.getElementById('ik-c-good').setAttribute('opacity', opacities.good);
+  document.getElementById('ik-c-paid').setAttribute('opacity', opacities.paid);
+
+  // Center glow scales with completeness
+  const centerR = filled * 14;
+  const glow = document.getElementById('ik-center-glow');
+  glow.setAttribute('r', centerR);
+  glow.setAttribute('opacity', filled === 4 ? 0.8 : filled * 0.15);
+
+  // Center word
+  const word = document.getElementById('ikigai-center-word');
+  if (filled === 4) {
+    word.style.color = 'rgba(244,239,230,1)';
+    word.innerHTML = '<strong>ikigai</strong>';
+  } else {
+    word.style.color = 'rgba(244,239,230,0.4)';
+    word.innerHTML = `${filled}/4<br>complete`;
+  }
+}
+
+// ── SLIDER TRACK ──────────────────────────────────
+function updateSliderTrack(el) {
+  const pct = ((el.value - el.min) / (el.max - el.min)) * 100;
+  el.style.setProperty('--pct', pct + '%');
+  const valEl = document.getElementById(el.id + '-val');
+  if (valEl) valEl.textContent = el.value + ' / 5';
+}
+
+// ── SUMMARY ───────────────────────────────────────
+function buildSummary() {
+  const fields = [
+    { label: 'Superpowers', id: 'f-superpowers' },
+    { label: 'Flow Activity', id: 'f-flow' },
+    { label: 'Potential Regret', id: 'f-regret' },
+    { label: '10-Year Vision', id: 'f-10yr' },
+    { label: 'Top Itches', id: 'f-itches' },
+    { label: 'What I Could Do More', id: 'f-more' },
+    { label: 'My Contribution', id: 'f-contribution' },
+    { label: 'Guiding Purpose', id: 'f-purpose' },
+    { label: 'Values', fn: () => state.values.join(' · ') || '—' },
+    { label: 'What\'s Missing', id: 'f-missing' },
+    { label: 'My Ikigai Sweet Spot', fn: () => {
+      const parts = [document.getElementById('ik-love').value, document.getElementById('ik-world').value].filter(Boolean);
+      return parts.length ? parts.join(' + ') : '—';
+    }},
+    { label: 'Accountability Buddy', id: 'f-buddy' },
+  ];
+
+  const grid = document.getElementById('summary-grid');
+  grid.innerHTML = '';
+  fields.forEach(f => {
+    const val = f.fn ? f.fn() : (document.getElementById(f.id)?.value || '—');
+    if (!val || val === '—') return;
+    const card = document.createElement('div');
+    card.className = 'summary-card';
+    card.innerHTML = `<div class="summary-card-label">${f.label}</div><div class="summary-card-val">${val.substring(0,120)}${val.length > 120 ? '…' : ''}</div>`;
+    grid.appendChild(card);
+  });
+
+  const oneThing = document.getElementById('f-one-thing')?.value || '—';
+  document.getElementById('summary-one-thing').textContent = oneThing || '—';
+}
+
+function submitForm() {
+  const name = document.getElementById('f-name')?.value || 'Anonymous';
+  alert(`Thank you, ${name}. Your responses have been submitted to HATCH. Your coach will be in touch shortly.`);
+}
+
+// ── INIT ──────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  buildRail();
+  updateRail(0);
+  initChipGroups();
+  buildValues();
+  buildEnergyAudit();
+  buildMatrix('future-matrix', 'future', state.futureRatings);
+  buildMatrix('current-matrix', 'current', state.currentRatings);
+  initRadar();
+  updateSliderTrack(document.getElementById('work-match'));
+});
+
+// Keyboard navigation
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight' && !['INPUT','TEXTAREA'].includes(document.activeElement.tagName)) nextChapter();
+  if (e.key === 'ArrowLeft'  && !['INPUT','TEXTAREA'].includes(document.activeElement.tagName)) prevChapter();
+});
+</script>
+</body>
+</html>
