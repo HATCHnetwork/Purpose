@@ -1349,11 +1349,66 @@ input[type="range"]::-webkit-slider-runnable-track {
       <strong style="color:var(--ivory)">If you're ready to actualize this:</strong> Set your phone alarm for a weekly reminder to spend 20 minutes moving one thing from your goals list forward in small, incremental steps. That's it. Small. Consistent. Irreversible.
     </div>
 
-    <button class="submit-btn" onclick="submitForm()">Submit to HATCH →</button>
+    <!-- Formspree success / error -->
+    <div id="fs-success" style="display:none; margin-top:24px; padding:24px 28px; background:rgba(74,140,92,0.1); border:1px solid rgba(74,140,92,0.3); border-radius:10px; text-align:center">
+      <div style="font-family:'DM Mono',monospace; font-size:10px; letter-spacing:0.2em; text-transform:uppercase; color:#4A8C5C; margin-bottom:8px">Submitted Successfully</div>
+      <div id="fs-success-name" style="font-family:'Playfair Display',serif; font-style:italic; font-size:18px; color:#F4EFE6; line-height:1.5">Thank you. Your coach will be in touch shortly.</div>
+    </div>
+    <div id="fs-error" style="display:none; margin-top:12px; color:#C45C4A; font-size:13px; text-align:center;">Something went wrong — please try again.</div>
+
+    <!-- Hidden Formspree form populated by JS -->
+    <form id="fs-form" action="https://formspree.io/f/xzdlyrpr" method="POST" style="display:none">
+      <input type="hidden" name="_subject" id="fs-subject">
+      <input type="hidden" name="Name" id="fs-Name">
+      <input type="hidden" name="Current Status" id="fs-Status">
+      <input type="hidden" name="Superpowers" id="fs-Superpowers">
+      <input type="hidden" name="People Come to Me For" id="fs-Help">
+      <input type="hidden" name="Flow Activity" id="fs-Flow">
+      <input type="hidden" name="Greatest Strength" id="fs-Strength">
+      <input type="hidden" name="20-Year Regret" id="fs-Regret">
+      <input type="hidden" name="10-Year Vision" id="fs-Vision">
+      <input type="hidden" name="Deepest Fear" id="fs-Fear">
+      <input type="hidden" name="Future Importance Ratings" id="fs-FutureRatings">
+      <input type="hidden" name="Current Self Ratings" id="fs-CurrentRatings">
+      <input type="hidden" name="Work-Self Match" id="fs-WorkMatch">
+      <input type="hidden" name="Itches to Scratch" id="fs-Itches">
+      <input type="hidden" name="Last Comfort Zone Push" id="fs-Comfort">
+      <input type="hidden" name="Could Do More Of" id="fs-More">
+      <input type="hidden" name="Learning and Growth" id="fs-Growth">
+      <input type="hidden" name="More Fun Would Look Like" id="fs-Fun">
+      <input type="hidden" name="Physical and Mental Health" id="fs-Health">
+      <input type="hidden" name="Relationships" id="fs-Relationships">
+      <input type="hidden" name="Contribution" id="fs-Contribution">
+      <input type="hidden" name="Guiding Purpose" id="fs-GuidingPurpose">
+      <input type="hidden" name="Meditates" id="fs-Meditates">
+      <input type="hidden" name="Recharge Frequency" id="fs-Recharge">
+      <input type="hidden" name="Social vs Solo" id="fs-Social">
+      <input type="hidden" name="Data vs Gut" id="fs-Data">
+      <input type="hidden" name="Logic vs People" id="fs-Logic">
+      <input type="hidden" name="Plan vs Open" id="fs-Plan">
+      <input type="hidden" name="Top 5 Values" id="fs-Values">
+      <input type="hidden" name="Living in Alignment" id="fs-Alignment">
+      <input type="hidden" name="Alignment Gap" id="fs-Gap">
+      <input type="hidden" name="Energy Drains" id="fs-Drains">
+      <input type="hidden" name="Energy Fuels" id="fs-Fuels">
+      <input type="hidden" name="Dead Weight to Clear" id="fs-Deadweight">
+      <input type="hidden" name="Ikigai - What I Love" id="fs-IkLove">
+      <input type="hidden" name="Ikigai - World Needs" id="fs-IkWorld">
+      <input type="hidden" name="Ikigai - Good At" id="fs-IkGood">
+      <input type="hidden" name="Ikigai - Paid For" id="fs-IkPaid">
+      <input type="hidden" name="Currently Missing" id="fs-Missing">
+      <input type="hidden" name="Other Thoughts" id="fs-Other">
+      <input type="hidden" name="One Thing (12 months)" id="fs-OneThing">
+      <input type="hidden" name="Accountability Buddy" id="fs-Buddy">
+    </form>
+
+    <button class="submit-btn" id="submit-btn" onclick="submitForm()">Submit to HATCH →</button>
 
     <p style="text-align:center; font-size:12px; color:rgba(244,239,230,0.25); margin-top:20px; font-family:'DM Mono',monospace">All responses are confidential · HATCH Purpose 3.0</p>
   </div>
 </div>
+
+<script src="https://unpkg.com/@formspree/ajax@1" defer></script>
 
 <script>
 // ── STATE ──────────────────────────────────────────
@@ -1648,147 +1703,95 @@ function buildSummary() {
   document.getElementById('summary-one-thing').textContent = oneThing || '—';
 }
 
-async function submitForm() {
-  const btn = document.querySelector('.submit-btn');
+function submitForm() {
+  const btn = document.getElementById('submit-btn');
   const name = document.getElementById('f-name')?.value || 'Anonymous';
 
-  // ── Collect every field ──────────────────────────
-  const getVal = id => document.getElementById(id)?.value?.trim() || '—';
-  const getChip = id => {
-    const sel = document.querySelector(`#${id} .chip.selected`);
-    return sel ? sel.dataset.val : '—';
+  const getVal = id => document.getElementById(id)?.value?.trim() || '';
+  const getChip = id => { const s = document.querySelector(`#${id} .chip.selected`); return s ? s.dataset.val : ''; };
+  const getMatrix = key => {
+    const r = state[key + 'Ratings'] || {};
+    return Object.entries(r).map(([k,v]) => `${k}: ${v}/5`).join(' | ');
   };
-  const getChips = id => {
-    const sels = document.querySelectorAll(`#${id} .chip.selected`);
-    return sels.length ? Array.from(sels).map(c => c.dataset.val).join(', ') : '—';
-  };
-
-  // Axis sliders (0-100)
-  const axisLabel = val => {
-    const n = parseInt(val);
-    if (n < 20) return 'strongly left';
-    if (n < 40) return 'leaning left';
-    if (n < 60) return 'balanced';
-    if (n < 80) return 'leaning right';
-    return 'strongly right';
-  };
-
-  // Matrix ratings
-  const getMatrix = prefix => {
-    const results = {};
-    ['Health','Family','Purpose','Spirituality','Mindfulness','Giving Back','Legacy','Monetary Wealth'].forEach(dim => {
-      results[dim] = state[prefix + 'Ratings']?.[dim] || 0;
-    });
-    return Object.entries(results).map(([k,v]) => `${k}: ${v}/5`).join(' | ');
-  };
-
-  // Energy audit
   const getEnergy = type => {
     const inputs = document.querySelectorAll(`#${type}-items .energy-input`);
-    return Array.from(inputs).map(i => i.value.trim()).filter(Boolean).join(', ') || '—';
+    return Array.from(inputs).map(i => i.value.trim()).filter(Boolean).join(', ');
   };
+  const axLabel = v => { const n=parseInt(v); return n<20?'strongly left':n<40?'leaning left':n<60?'balanced':n<80?'leaning right':'strongly right'; };
 
-  const payload = {
-    // ── Identity ──
-    'Name':                    getVal('f-name'),
-    'Current Status':          getChip('status-chips'),
+  // Populate hidden form fields
+  const set = (id, val) => { const el = document.getElementById(id); if(el) el.value = val; };
+  set('fs-subject',       `Purpose 3.0 — ${name}`);
+  set('fs-Name',          name);
+  set('fs-Status',        getChip('status-chips'));
+  set('fs-Superpowers',   getVal('f-superpowers'));
+  set('fs-Help',          getVal('f-help'));
+  set('fs-Flow',          getVal('f-flow'));
+  set('fs-Strength',      getVal('f-strength'));
+  set('fs-Regret',        getVal('f-regret'));
+  set('fs-Vision',        getVal('f-10yr'));
+  set('fs-Fear',          getChip('fear-chips'));
+  set('fs-FutureRatings', getMatrix('future'));
+  set('fs-CurrentRatings',getMatrix('current'));
+  set('fs-WorkMatch',     document.getElementById('work-match')?.value || '');
+  set('fs-Itches',        getVal('f-itches'));
+  set('fs-Comfort',       getVal('f-comfort'));
+  set('fs-More',          getVal('f-more'));
+  set('fs-Growth',        getVal('f-grow'));
+  set('fs-Fun',           getVal('f-fun'));
+  set('fs-Health',        getVal('f-health'));
+  set('fs-Relationships', getVal('f-relationships'));
+  set('fs-Contribution',  getVal('f-contribution'));
+  set('fs-GuidingPurpose',getVal('f-purpose'));
+  set('fs-Meditates',     getChip('meditate-chips'));
+  set('fs-Recharge',      getChip('recharge-chips'));
+  set('fs-Social',        `${document.getElementById('f-social')?.value||50} (${axLabel(document.getElementById('f-social')?.value||50)})`);
+  set('fs-Data',          `${document.getElementById('f-data')?.value||50} (${axLabel(document.getElementById('f-data')?.value||50)})`);
+  set('fs-Logic',         `${document.getElementById('f-logic')?.value||50} (${axLabel(document.getElementById('f-logic')?.value||50)})`);
+  set('fs-Plan',          `${document.getElementById('f-plan')?.value||50} (${axLabel(document.getElementById('f-plan')?.value||50)})`);
+  set('fs-Values',        state.values.join(', '));
+  set('fs-Alignment',     getChip('align-chips'));
+  set('fs-Gap',           getVal('f-gap'));
+  set('fs-Drains',        getEnergy('drain'));
+  set('fs-Fuels',         getEnergy('fuel'));
+  set('fs-Deadweight',    getVal('f-deadweight'));
+  set('fs-IkLove',        getVal('ik-love'));
+  set('fs-IkWorld',       getVal('ik-world'));
+  set('fs-IkGood',        getVal('ik-good'));
+  set('fs-IkPaid',        getVal('ik-paid'));
+  set('fs-Missing',       getVal('f-missing'));
+  set('fs-Other',         getVal('f-other'));
+  set('fs-OneThing',      getVal('f-one-thing'));
+  set('fs-Buddy',         getVal('f-buddy'));
 
-    // ── Superpowers ──
-    'Superpowers':             getVal('f-superpowers'),
-    'People Come to Me For':   getVal('f-help'),
-    'Flow Activity':           getVal('f-flow'),
-    'Greatest Strength':       getVal('f-strength'),
-
-    // ── Regret Compass ──
-    '20-Year Regret':          getVal('f-regret'),
-    '10-Year Vision':          getVal('f-10yr'),
-    'Deepest Fear':            getChip('fear-chips'),
-
-    // ── Self-Assessment ──
-    'Future Importance Ratings': getMatrix('future'),
-    'Current Ratings':           getMatrix('current'),
-    'Work-Self Match (1-5)':     document.getElementById('work-match')?.value || '—',
-
-    // ── Itches ──
-    'Itches to Scratch':       getVal('f-itches'),
-    'Last Comfort Zone Push':  getVal('f-comfort'),
-    'Could Do More Of':        getVal('f-more'),
-    'Learning & Growth':       getVal('f-grow'),
-    'More Fun Would Look Like':getVal('f-fun'),
-
-    // ── Foundations ──
-    'Physical & Mental Health':getVal('f-health'),
-    'Relationships':           getVal('f-relationships'),
-    'Contribution':            getVal('f-contribution'),
-    'Guiding Purpose':         getVal('f-purpose'),
-    'Meditates':               getChip('meditate-chips'),
-    'Recharge Frequency':      getChip('recharge-chips'),
-
-    // ── Wiring ──
-    'Social vs Solo (0=social, 100=solo)':    document.getElementById('f-social')?.value || '50',
-    'Data vs Gut':             `${document.getElementById('f-data')?.value || '50'} — ${axisLabel(document.getElementById('f-data')?.value)}`,
-    'Logic vs People':         `${document.getElementById('f-logic')?.value || '50'} — ${axisLabel(document.getElementById('f-logic')?.value)}`,
-    'Plan vs Open':            `${document.getElementById('f-plan')?.value || '50'} — ${axisLabel(document.getElementById('f-plan')?.value)}`,
-
-    // ── Values ──
-    'Top 5 Values':            state.values.join(', ') || '—',
-    'Living in Alignment':     getChip('align-chips'),
-    'Alignment Gap':           getVal('f-gap'),
-    'Energy Drains':           getEnergy('drain'),
-    'Energy Fuels':            getEnergy('fuel'),
-    'Dead Weight to Clear':    getVal('f-deadweight'),
-
-    // ── Ikigai ──
-    'Ikigai — What I Love':    getVal('ik-love'),
-    'Ikigai — World Needs':    getVal('ik-world'),
-    'Ikigai — Good At':        getVal('ik-good'),
-    'Ikigai — Paid For':       getVal('ik-paid'),
-
-    // ── Accountability ──
-    'Currently Missing':       getVal('f-missing'),
-    'Other Thoughts':          getVal('f-other'),
-    'One Thing (12 months)':   getVal('f-one-thing'),
-    'Accountability Buddy':    getVal('f-buddy'),
-
-    // ── Meta ──
-    '_subject':  `Purpose 3.0 — ${name}`,
-    '_replyto':  getVal('f-name'),
-  };
-
-  // ── Send to Formspree ────────────────────────────
+  // Submit via fetch
   btn.textContent = 'Submitting…';
   btn.disabled = true;
 
-  try {
-    const res = await fetch('https://formspree.io/f/xzdlyrpr', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-      body: JSON.stringify(payload),
-    });
+  const form = document.getElementById('fs-form');
+  const data = new FormData(form);
 
+  fetch('https://formspree.io/f/xzdlyrpr', {
+    method: 'POST',
+    body: data,
+    headers: { 'Accept': 'application/json' }
+  })
+  .then(res => {
     if (res.ok) {
-      btn.textContent = '✓ Submitted';
-      btn.style.background = 'linear-gradient(135deg, #4A8C5C, #5AAF72)';
-
-      // Success message
-      const msg = document.createElement('div');
-      msg.style.cssText = 'margin-top:24px; padding:24px 28px; background:rgba(74,140,92,0.1); border:1px solid rgba(74,140,92,0.3); border-radius:10px; text-align:center';
-      msg.innerHTML = `
-        <div style="font-family:'DM Mono',monospace; font-size:10px; letter-spacing:0.2em; text-transform:uppercase; color:#4A8C5C; margin-bottom:8px">Submitted Successfully</div>
-        <div style="font-family:'Playfair Display',serif; font-style:italic; font-size:18px; color:#F4EFE6; line-height:1.5">Thank you, ${name}.<br>Your coach will be in touch shortly.</div>
-      `;
-      btn.insertAdjacentElement('afterend', msg);
+      btn.style.display = 'none';
+      const success = document.getElementById('fs-success');
+      document.getElementById('fs-success-name').textContent = `Thank you, ${name}. Your coach will be in touch shortly.`;
+      success.style.display = 'block';
     } else {
-      throw new Error('Submission failed');
+      return res.json().then(data => { throw new Error(data.error || 'Error'); });
     }
-  } catch (err) {
+  })
+  .catch(err => {
     btn.textContent = 'Submit to HATCH →';
     btn.disabled = false;
-    const errMsg = document.createElement('div');
-    errMsg.style.cssText = 'margin-top:12px; color:#C45C4A; font-size:13px; text-align:center';
-    errMsg.textContent = 'Something went wrong — please try again or email your responses directly.';
-    btn.insertAdjacentElement('afterend', errMsg);
-  }
+    document.getElementById('fs-error').style.display = 'block';
+    console.error('Formspree error:', err);
+  });
 }
 
 // ── INIT ──────────────────────────────────────────
